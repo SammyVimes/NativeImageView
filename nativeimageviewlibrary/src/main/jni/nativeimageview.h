@@ -60,18 +60,20 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1gl_1render(JNIEnv* UNUSED, jclass UNUSED) {
-    GLuint texture1;
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    glEnable(GL_TEXTURE_2D);
+
+    GLuint texID;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-
     //читаем PNG картинку
     PNGDecoder pngDecoder;
-    image im = pngDecoder.readPng("/mnt/sdcard/image.png"); //TODO: here i fall
+    image im = pngDecoder.readPng("/mnt/sdcard/Pictures/image.png"); //TODO: here i fall
     LOGI("PNG: %dx%d (%dx%d) bit:%d type:%d", im.imWidth, im.imHeight, im.glWidth, im.glHeight, im.bit_depth, im.color_type);
     //в зависимости от прозрачности загружаем текстуру в OpenGL
     if (im.color_type == PNG_COLOR_TYPE_RGBA) {
