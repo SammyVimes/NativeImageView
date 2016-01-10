@@ -11,6 +11,7 @@
     tools:context="com.github.sammyvimes.nativeimageview.MainActivity">
 
     <com.github.sammyvimes.nativeimageviewlibrary.NativeImageView
+        android:id="@+id/niv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 

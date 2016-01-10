@@ -6,6 +6,7 @@
 #define NATIVEIMAGEVIEW_IMAGE_H
 
 #include "png/libpng/png.h"
+#include "gl/platform_gl.h"
 
 struct image {
     png_uint_32 imWidth, imHeight; //реальный размер картинки
@@ -13,6 +14,16 @@ struct image {
     int bit_depth, color_type;
     char* data; //данные RGB/RGBA
 };
+
+typedef struct {
+    const int width;
+    const int height;
+    const int size;
+    const GLenum gl_color_format;
+    const void* data;
+} RawImageData;
+
+
 
 static int reNpot(int w) {
     //поддерживает ли OpenGL текстуры размера не кратным двум

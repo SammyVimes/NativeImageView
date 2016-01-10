@@ -21,6 +21,7 @@ model {
         ldLibs.add("log")
         ldLibs.add("android")
         ldLibs.add("GLESv1_CM")
+        ldLibs.add("GLESv2")
         ldLibs.add("EGL")
     }
 }
