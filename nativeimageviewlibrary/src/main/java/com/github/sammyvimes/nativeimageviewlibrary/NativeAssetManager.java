@@ -10,13 +10,13 @@ public class NativeAssetManager {
 
     private static native void init_asset_manager(final AssetManager assetManager);
 
-    static {
-        System.loadLibrary("nativeimageviewlib");
-    }
-
     public NativeAssetManager(final Context context) {
         AssetManager assets = context.getAssets();
         init_asset_manager(assets);
+    }
+
+    static {
+        System.loadLibrary("nativeimageviewlib");
     }
 
 }

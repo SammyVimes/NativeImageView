@@ -18,6 +18,7 @@
 #include "gl/texture.h"
 #include "gl/shader.h"
 #include "gl/buffer.h"
+#include "file/platform_file_utils.h"
 
 #define LOG_TAG "JNINativeImageView"
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -26,6 +27,7 @@
 #define TEXTURE_HEIGHT 256
 
 #define UNUSED_ATTR  __attribute__((unused))
+
 
 static GLuint s_texture = 0;
 static int s_x = 10;
@@ -56,6 +58,8 @@ static GLuint s_disable_caps[] = {
         0
 };
 
+class PNGDecoder;
+
 
 GLuint load_png_asset_into_texture(const char* relative_path) {
     assert(relative_path != NULL);
@@ -74,6 +78,7 @@ GLuint load_png_asset_into_texture(const char* relative_path) {
 }
 
 GLuint load_png_file_into_texture(const char* relative_path) {
+    LOGI("load_png_file_into_texture");
     assert(relative_path != NULL);
 
     PNGDecoder pngDecoder;
@@ -130,7 +135,6 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
-
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1gl_1render(JNIEnv* UNUSED_ATTR, jclass UNUSED_ATTR) {
 }
@@ -159,6 +163,7 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 //    check_gl_error("glTexParameteriv");
 //    s_w = w;
 //    s_h = h;
+    LOGI("before load_png_file_into_texture");
     texture = load_png_file_into_texture("/mnt/sdcard/Pictures/image.png");
     buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
     program = build_program_from_assets("shaders/shader.vsh", "shaders/shader.fsh");
@@ -168,7 +173,6 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
             glGetAttribLocation(program, "a_TextureCoordinates");
     u_texture_unit_location = glGetUniformLocation(program, "u_TextureUnit");
 }
-
 
 
 #endif //NATIVEIMAGEVIEW_NATIVEIMAGEVIEW_H

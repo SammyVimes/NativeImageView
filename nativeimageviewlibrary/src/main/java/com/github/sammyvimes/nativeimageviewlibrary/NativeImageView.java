@@ -1,6 +1,7 @@
 package com.github.sammyvimes.nativeimageviewlibrary;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
@@ -24,18 +25,22 @@ public class NativeImageView extends GLSurfaceView {
     private String imagePath;
     private NativeAssetManager nativeAssetManager;
 
+    private Context context;
+
     public NativeImageView(final Context context) {
         super(context);
+        this.context = context;
         init();
-        nativeAssetManager = new NativeAssetManager(context);
     }
 
     public NativeImageView(final Context context, final AttributeSet attrs) {
         super(context, attrs);
+        this.context = context;
         init();
     }
 
     private void init() {
+        nativeAssetManager = new NativeAssetManager(context);
 
         setZOrderOnTop(true);
         setEGLContextClientVersion(2);

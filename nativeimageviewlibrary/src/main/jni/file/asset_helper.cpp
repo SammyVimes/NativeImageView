@@ -2,16 +2,12 @@
 // Created by Semyon on 10.01.2016.
 //
 
-#include "asset_manager.h"
-
-#include "../gl/platform_log.h"
-#include <android/asset_manager_jni.h>
-#include <assert.h>
+#include "asset_helper.h"
 
 static AAssetManager* asset_manager;
 
-JNIEXPORT void JNICALL
-Java_com_github_sammyvimes_nativeimageviewlibrary_NativeAssetManager_init_1asset_1manager(
+extern "C" JNIEXPORT
+void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeAssetManager_init_1asset_1manager(
         JNIEnv *env, jclass type, jobject assetManager) {
     UNUSED(type);
     asset_manager = AAssetManager_fromJava(env, assetManager);

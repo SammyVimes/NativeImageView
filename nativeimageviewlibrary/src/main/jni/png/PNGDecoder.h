@@ -14,10 +14,14 @@
 #include "../image.h"
 
 #include "../gl/platform_log.h"
-#include "../assets/asset_manager.h"
+#include "../file/asset_helper.h"
+#include "../file/platform_file_utils.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+
+
+
 
 typedef struct {
     const png_byte* data;
@@ -145,19 +149,34 @@ public:
         png_set_sig_bytes(png_ptr, 8);
         png_read_info(png_ptr, info_ptr);
 
-        const PngInfo png_info = read_and_update_info(png_ptr, info_ptr);
-        const DataHandle raw_image = read_entire_png_image(
-                png_ptr, info_ptr, png_info.height);
+        png_uint_32 width, height;
+        int bit_depth, color_type;
 
-        png_read_end(png_ptr, info_ptr);
-        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+        //читаем данные о картинке
+        png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
+
+        //если картинка содержит прозрачность то на каждый пиксель 4 байта (RGBA), иначе 3 (RGB)
+        int row = width * (color_type == PNG_COLOR_TYPE_RGBA ? 4 : 3);
+        void* data = new char[row * height];
+
+        //в этом массиве содержатся указатели на начало каждой строки
+        png_bytep * row_pointers = new png_bytep[height];
+        for(int i = 0; i < height; ++i)
+            row_pointers[i] = (png_bytep) (data + i * row);
+
+        //читаем картинку
+        png_read_image(png_ptr, row_pointers);
+        png_destroy_read_struct(&png_ptr, &info_ptr, 0);
+        delete[] row_pointers;
+
+        get_gl_color_format(color_type);
 
         return (RawImageData) {
-                png_info.width,
-                png_info.height,
-                raw_image.size,
-                get_gl_color_format(png_info.color_type),
-                raw_image.data};
+                width,
+                height,
+                row * height,
+                get_gl_color_format(color_type),
+                data};
     }
 
     RawImageData get_raw_image_data_from_png_asset(const char* relative_path) {
@@ -171,7 +190,7 @@ public:
     /* Returns the decoded image data, or aborts if there's an error during decoding. */
     RawImageData get_raw_image_data_from_png(const void* png_data, const int png_data_size) {
         assert(png_data != NULL && png_data_size > 8);
-        assert(png_check_sig((void*)png_data, 8));
+//        assert(png_check_sig((void*)png_data, 8));
 
         png_structp png_ptr = png_create_read_struct(
                 PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
