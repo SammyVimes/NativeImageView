@@ -47,7 +47,6 @@ public class NativeImageView extends GLSurfaceView {
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
         setRenderer(new MyRenderer());
-        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
         (new Thread() {
@@ -90,6 +89,7 @@ public class NativeImageView extends GLSurfaceView {
             }
             framerate++;
             native_gl_render();
+            postInvalidate();
         }
         public long time = 0;
         public short framerate = 0;

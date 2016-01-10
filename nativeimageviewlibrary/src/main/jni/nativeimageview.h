@@ -137,6 +137,24 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1gl_1render(JNIEnv* UNUSED_ATTR, jclass UNUSED_ATTR) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(program);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(u_texture_unit_location, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE,
+                          4 * sizeof(GL_FLOAT), BUFFER_OFFSET(0));
+    glVertexAttribPointer(a_texture_coordinates_location, 2, GL_FLOAT, GL_FALSE,
+                          4 * sizeof(GL_FLOAT), BUFFER_OFFSET(2 * sizeof(GL_FLOAT)));
+    glEnableVertexAttribArray(a_position_location);
+    glEnableVertexAttribArray(a_texture_coordinates_location);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 extern "C" JNIEXPORT
@@ -163,7 +181,6 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 //    check_gl_error("glTexParameteriv");
 //    s_w = w;
 //    s_h = h;
-    LOGI("before load_png_file_into_texture");
     texture = load_png_file_into_texture("/mnt/sdcard/Pictures/image.png");
     buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
     program = build_program_from_assets("shaders/shader.vsh", "shaders/shader.fsh");
