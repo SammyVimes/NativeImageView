@@ -124,6 +124,11 @@ static const float rect[] = {-1.0f, -1.0f, 0.0f, 0.0f,
                              1.0f, -1.0f, 1.0f, 0.0f,
                              1.0f,  1.0f, 1.0f, 1.0f};
 
+//static const float rect[] = {-0.5f, -0.5f, 0.0f, 0.0f,
+//                             -0.5f,  0.5f, 0.0f, 1.0f,
+//                             0.5f, -0.5f, 1.0f, 0.0f,
+//                             0.5f,  0.5f, 1.0f, 1.0f};
+
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1start(JNIEnv* UNUSED_ATTR, jclass UNUSED_ATTR) {
     LOGI("START");
@@ -137,29 +142,87 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1gl_1render(JNIEnv* UNUSED_ATTR, jclass UNUSED_ATTR) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(program);
+    // For very fast zooming in and out, do not apply any expensive filter.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(u_texture_unit_location, 0);
+    // Ensure we would have seamless transition between adjecent tiles.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE,
-                          4 * sizeof(GL_FLOAT), BUFFER_OFFSET(0));
-    glVertexAttribPointer(a_texture_coordinates_location, 2, GL_FLOAT, GL_FALSE,
-                          4 * sizeof(GL_FLOAT), BUFFER_OFFSET(2 * sizeof(GL_FLOAT)));
-    glEnableVertexAttribArray(a_position_location);
-    glEnableVertexAttribArray(a_texture_coordinates_location);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    // This is background, i.e. all the outdated tiles while
+    // new primary ones are being prepared (e.g. after zooming).
+    if (!m_secondaryBuffer.isEmpty()) {
+        QRect backgroundRange = m_secondaryBuffer.visibleRange(m_viewOffset, m_viewZoomFactor, size());
+        m_secondaryBuffer.setViewModelMatrix(m_viewOffset, m_viewZoomFactor);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+        for (int x = 0; x < m_secondaryBuffer.width(); ++x) {
+            for (int y = 0; y < m_secondaryBuffer.height(); ++y) {
+                if (backgroundRange.contains(x, y))
+                    m_secondaryBuffer.draw(x, y, m_defaultTexture);
+                else
+                    m_secondaryBuffer.remove(x, y);
+            }
+        }
+    }
+
+    // Extend the update range with extra tiles in every direction, this is
+    // to anticipate panning and scrolling.
+    QRect updateRange = m_mainBuffer.visibleRange(m_viewOffset, m_viewZoomFactor, size());
+    updateRange.adjust(-ExtraTiles, -ExtraTiles, ExtraTiles, ExtraTiles);
+
+    // When zooming in/out, we have secondary textures as
+    // the background. Thus, do not overdraw the background
+    // with the checkerboard pattern (default texture).
+    GLuint substitute = m_secondaryBuffer.isEmpty() ? m_defaultTexture : 0;
+
+    m_mainBuffer.setViewModelMatrix(m_viewOffset, m_viewZoomFactor);
+    bool needsUpdate = false;
+    for (int x = 0; x < m_mainBuffer.width(); ++x) {
+        for (int y = 0; y < m_mainBuffer.height(); ++y) {
+            GLuint texture = m_mainBuffer.at(x, y);
+            if (updateRange.contains(x, y)) {
+                m_mainBuffer.draw(x, y, substitute);
+                if (texture == 0)
+                    needsUpdate = true;
+            }
+
+            // Save GPU memory and throw out unneeded texture
+            if (texture != 0 && !updateRange.contains(x, y))
+                m_mainBuffer.remove(x, y);
+        }
+    }
+
+    if (needsUpdate) {
+        scheduleUpdate();
+    } else {
+        // Every tile is up-to-date, thus discard the background.
+        if (!m_secondaryBuffer.isEmpty()) {
+            m_secondaryBuffer.clear();
+            update();
+        }
+    }
+
+    // Zooming means we need a fresh set of resolution-correct tiles.
+    if (m_viewZoomFactor != m_mainBuffer.zoomFactor)
+        scheduleRefresh();
 }
 
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1gl_1resize(JNIEnv* UNUSED_ATTR, jclass UNUSED_ATTR, jint w, jint h) {
     LOGI("native_gl_resize %d %d", w, h);
+
+    // Ensure that (0,0) is top left and (width - 1, height -1) is bottom right.
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrthof(0, w, h, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
 //    glDeleteTextures(1, &s_texture);
 //    GLuint *start = s_disable_caps;
 //    while (*start) {
@@ -181,14 +244,16 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 //    check_gl_error("glTexParameteriv");
 //    s_w = w;
 //    s_h = h;
-    texture = load_png_file_into_texture("/mnt/sdcard/Pictures/image.png");
-    buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
-    program = build_program_from_assets("shaders/shader.vsh", "shaders/shader.fsh");
 
-    a_position_location = glGetAttribLocation(program, "a_Position");
-    a_texture_coordinates_location =
-            glGetAttribLocation(program, "a_TextureCoordinates");
-    u_texture_unit_location = glGetUniformLocation(program, "u_TextureUnit");
+
+//    texture = load_png_file_into_texture("/mnt/sdcard/Pictures/image.png");
+//    buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
+//    program = build_program_from_assets("shaders/shader.vsh", "shaders/shader.fsh");
+//
+//    a_position_location = glGetAttribLocation(program, "a_Position");
+//    a_texture_coordinates_location =
+//            glGetAttribLocation(program, "a_TextureCoordinates");
+//    u_texture_unit_location = glGetUniformLocation(program, "u_TextureUnit");
 }
 
 
