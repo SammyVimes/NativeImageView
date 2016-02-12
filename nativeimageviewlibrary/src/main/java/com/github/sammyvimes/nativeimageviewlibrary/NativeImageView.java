@@ -42,12 +42,12 @@ public class NativeImageView extends GLSurfaceView {
     private void init() {
         nativeAssetManager = new NativeAssetManager(context);
 
-        setZOrderOnTop(true);
+//        setZOrderOnTop(true);
 //        setEGLContextClientVersion(2);
-        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+//        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
         setRenderer(new MyRenderer());
-        getHolder().setFormat(PixelFormat.TRANSLUCENT);
+//        getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
         (new Thread() {
             @Override

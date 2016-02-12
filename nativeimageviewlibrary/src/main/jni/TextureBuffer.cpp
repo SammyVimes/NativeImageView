@@ -82,12 +82,12 @@ void TextureBuffer::draw(int x, int y, GLuint substitute) const {
     float ty = y * TileDim;
 
     Quad quad;
-    quad.bl.vect = (Vec2) {x, y};
-    quad.br.vect = (Vec2) {x + TileDim, y};
-    quad.tr.vect = (Vec2) {x + TileDim, y + TileDim};
-    quad.tl.vect = (Vec2) {x, y + TileDim};
+    quad.bl.vect = (Vec2) {tx, ty};
+    quad.br.vect = (Vec2) {tx + TileDim, ty};
+    quad.tr.vect = (Vec2) {tx + TileDim, ty + TileDim};
+    quad.tl.vect = (Vec2) {tx, ty + TileDim};
     quad.tl.color = quad.tr.color = quad.bl.color = quad.br.color
-            = (Color4B) {1, 1, 1, 255};
+            = (Color4B) {0, 0, 0, 255};
     quad.tl.texCoords = (Vec2) {0, 0};
     quad.tr.texCoords = (Vec2) {1, 0};
     quad.br.texCoords = (Vec2) {1, 1};
