@@ -16,7 +16,6 @@
 #include "png/PNGDecoder.h"
 #include "image.h"
 #include "gl/texture.h"
-#include "gl/shader.h"
 #include "gl/buffer.h"
 #include "file/platform_file_utils.h"
 #include "TextureBuffer.h"
@@ -106,6 +105,7 @@ GLuint load_png_file_into_texture(const char* relative_path) {
     const GLuint texture_object_id = load_texture(
             raw_image_data.width, raw_image_data.height,
             raw_image_data.gl_color_format, raw_image_data.data);
+    check_gl_error("load_png_file_into_texture");
 
     pngDecoder.release_raw_image_data(&raw_image_data);
 
@@ -263,86 +263,98 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
 
 extern "C" JNIEXPORT
 void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_native_1gl_1render(JNIEnv* UNUSED_ATTR, jclass UNUSED_ATTR) {
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // For very fast zooming in and out, do not apply any expensive filter.
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    float vertices[] = {
+            0.1f, 0.1f, 0.1f,
+            0.2f, 0.29f, 0.1f,
+            0.39f, 0.1f, 0.1f
+    };
+    GLbyte indices[] = { 0, 1, 2 };
+    glVertexPointer(3, GL_FLOAT, 0, vertices);
+    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_BYTE, indices);
+    check_gl_error("asd");
+//    // For very fast zooming in and out, do not apply any expensive filter.
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//
+//    // Ensure we would have seamless transition between adjecent tiles.
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//
+//    // This is background, i.e. all the outdated tiles while
+//    // new primary ones are being prepared (e.g. after zooming).
+//    if (!m_secondaryBuffer.isEmpty()) {
+//        QRect backgroundRange = m_secondaryBuffer.visibleRange(m_viewOffset, m_viewZoomFactor, size());
+//        m_secondaryBuffer.setViewModelMatrix(m_viewOffset, m_viewZoomFactor);
+//
+//        for (int x = 0; x < m_secondaryBuffer.width(); ++x) {
+//            for (int y = 0; y < m_secondaryBuffer.height(); ++y) {
+//                if (backgroundRange.contains(x, y))
+//                    m_secondaryBuffer.draw(x, y, m_defaultTexture);
+//                else
+//                    m_secondaryBuffer.remove(x, y);
+//            }
+//        }
+//    }
+//
+//    // Extend the update range with extra tiles in every direction, this is
+//    // to anticipate panning and scrolling.
+//    QRect updateRange = m_mainBuffer.visibleRange(m_viewOffset, m_viewZoomFactor, size());
+//    LOGI("m_viewZoomFactor %f", m_viewZoomFactor);
+//    QSize bufferSize = m_mainBuffer.getBufferSize();
+//    LOGI("bufferSize %d %d", bufferSize.width(), bufferSize.height());
+//    QSize sz = size();
+//    LOGI("sz %d %d", sz.width(), sz.height());
+//    LOGI("UpdateRange %d %d %d %d", updateRange.x(), updateRange.y(), updateRange.right(), updateRange.bottom());
+//    updateRange.adjust(-ExtraTiles, -ExtraTiles, ExtraTiles, ExtraTiles);
+//
+//    // When zooming in/out, we have secondary textures as
+//    // the background. Thus, do not overdraw the background
+//    // with the checkerboard pattern (default texture).
+//    GLuint substitute = m_secondaryBuffer.isEmpty() ? m_defaultTexture : 0;
+//
+//    LOGI("RENDERING");
+//
+//    m_mainBuffer.setViewModelMatrix(m_viewOffset, m_viewZoomFactor);
+//    check_gl_error("before main buffer draw");
+//    bool needsUpdate = false;
+//    LOGI("Main Buffer width %d height %d", m_mainBuffer.width(), m_mainBuffer.height());
+//    for (int x = 0; x < m_mainBuffer.width(); ++x) {
+//        for (int y = 0; y < m_mainBuffer.height(); ++y) {
+//            GLuint texture = m_mainBuffer.at(x, y);
+////            LOGI("Texture is %d", texture);
+//            if (updateRange.contains(x, y)) {
+//                LOGI("Range contains");
+//                LOGI("Substitute %d", substitute);
+//                m_mainBuffer.draw(x, y, substitute);
+//                check_gl_error("main buffer draw");
+//                if (texture == 0)
+//                    needsUpdate = true;
+//            }
+//
+//            // Save GPU memory and throw out unneeded texture
+//            if (texture != 0 && !updateRange.contains(x, y))
+//                m_mainBuffer.remove(x, y);
+//        }
+//    }
+//
+//    if (needsUpdate) {
+//        scheduleUpdate();
+//    } else {
+//        // Every tile is up-to-date, thus discard the background.
+//        if (!m_secondaryBuffer.isEmpty()) {
+//            m_secondaryBuffer.clear();
+////            update();
+//        }
+//    }
+//
+//    // Zooming means we need a fresh set of resolution-correct tiles.
+//    if (m_viewZoomFactor != m_mainBuffer.zoomFactor) {
+//        scheduleRefresh();
+//    }
 
-    // Ensure we would have seamless transition between adjecent tiles.
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // This is background, i.e. all the outdated tiles while
-    // new primary ones are being prepared (e.g. after zooming).
-    if (!m_secondaryBuffer.isEmpty()) {
-        QRect backgroundRange = m_secondaryBuffer.visibleRange(m_viewOffset, m_viewZoomFactor, size());
-        m_secondaryBuffer.setViewModelMatrix(m_viewOffset, m_viewZoomFactor);
-
-        for (int x = 0; x < m_secondaryBuffer.width(); ++x) {
-            for (int y = 0; y < m_secondaryBuffer.height(); ++y) {
-                if (backgroundRange.contains(x, y))
-                    m_secondaryBuffer.draw(x, y, m_defaultTexture);
-                else
-                    m_secondaryBuffer.remove(x, y);
-            }
-        }
-    }
-
-    // Extend the update range with extra tiles in every direction, this is
-    // to anticipate panning and scrolling.
-    QRect updateRange = m_mainBuffer.visibleRange(m_viewOffset, m_viewZoomFactor, size());
-    LOGI("m_viewZoomFactor %f", m_viewZoomFactor);
-    QSize bufferSize = m_mainBuffer.getBufferSize();
-    LOGI("bufferSize %d %d", bufferSize.width(), bufferSize.height());
-    QSize sz = size();
-    LOGI("sz %d %d", sz.width(), sz.height());
-    LOGI("UpdateRange %d %d %d %d", updateRange.x(), updateRange.y(), updateRange.right(), updateRange.bottom());
-    updateRange.adjust(-ExtraTiles, -ExtraTiles, ExtraTiles, ExtraTiles);
-
-    // When zooming in/out, we have secondary textures as
-    // the background. Thus, do not overdraw the background
-    // with the checkerboard pattern (default texture).
-    GLuint substitute = m_secondaryBuffer.isEmpty() ? m_defaultTexture : 0;
-
-    LOGI("RENDERING");
-
-    m_mainBuffer.setViewModelMatrix(m_viewOffset, m_viewZoomFactor);
-    bool needsUpdate = false;
-    LOGI("Main Buffer width %d height %d", m_mainBuffer.width(), m_mainBuffer.height());
-    for (int x = 0; x < m_mainBuffer.width(); ++x) {
-        for (int y = 0; y < m_mainBuffer.height(); ++y) {
-            GLuint texture = m_mainBuffer.at(x, y);
-//            LOGI("Texture is %d", texture);
-            if (updateRange.contains(x, y)) {
-                LOGI("Range contains");
-                LOGI("Substitute %d", substitute);
-                m_mainBuffer.draw(x, y, substitute);
-                if (texture == 0)
-                    needsUpdate = true;
-            }
-
-            // Save GPU memory and throw out unneeded texture
-            if (texture != 0 && !updateRange.contains(x, y))
-                m_mainBuffer.remove(x, y);
-        }
-    }
-
-    if (needsUpdate) {
-        scheduleUpdate();
-    } else {
-        // Every tile is up-to-date, thus discard the background.
-        if (!m_secondaryBuffer.isEmpty()) {
-            m_secondaryBuffer.clear();
-//            update();
-        }
-    }
-
-    // Zooming means we need a fresh set of resolution-correct tiles.
-    if (m_viewZoomFactor != m_mainBuffer.zoomFactor) {
-        scheduleRefresh();
-    }
 }
 
 extern "C" JNIEXPORT
@@ -351,12 +363,15 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
     _width = w;
     _height = h;
     // Ensure that (0,0) is top left and (width - 1, height -1) is bottom right.
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrthof(0, w, h, 0, -1, 1);
+    glOrthof(0, w, 0, h, -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    check_gl_error("after resize");
 }
 
 

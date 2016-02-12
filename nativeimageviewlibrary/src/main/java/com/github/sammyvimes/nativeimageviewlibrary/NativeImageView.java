@@ -42,12 +42,12 @@ public class NativeImageView extends GLSurfaceView {
     private void init() {
         nativeAssetManager = new NativeAssetManager(context);
 
-//        setZOrderOnTop(true);
+        setZOrderOnTop(true);
 //        setEGLContextClientVersion(2);
-//        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
         setRenderer(new MyRenderer());
-//        getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
         (new Thread() {
             @Override
@@ -60,7 +60,9 @@ public class NativeImageView extends GLSurfaceView {
 
     }
 
+
     class MyRenderer implements GLSurfaceView.Renderer {
+
         @Override
         public void onSurfaceCreated(GL10 gl, EGLConfig c) {
             native_surface_created();
@@ -89,7 +91,7 @@ public class NativeImageView extends GLSurfaceView {
             }
             framerate++;
             native_gl_render();
-            postInvalidate();
+//            postInvalidate();
         }
         public long time = 0;
         public short framerate = 0;

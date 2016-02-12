@@ -3,6 +3,11 @@
 //
 
 #include "TextureBuffer.h"
+#include <android/log.h>
+
+#define LOG_TAG "TextureBuffer"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 
 TextureBuffer::TextureBuffer()
         : zoomFactor(0.1) {
@@ -68,54 +73,67 @@ void TextureBuffer::resize(int w, int h) {
 
 // Each tile is drawn as textured quad.
 void TextureBuffer::draw(int x, int y, GLuint substitute) const {
-    int index = y * bufferSize.width() + x;
-    if (index < 0 || index >= textures.size())
-        return;
+//    int index = y * bufferSize.width() + x;
+//    if (index < 0 || index >= textures.size())
+//        return;
+//
+//    GLuint texture = textures.at(index);
+//    if (texture == 0)
+//        texture = substitute;
+//    if (texture == 0)
+//        return;
+//
+//    float tx = x * TileDim;
+//    float ty = y * TileDim;
+//
+//    Quad quad;
+//    quad.bl.vect = (Vec2) {tx, ty};
+//    quad.br.vect = (Vec2) {tx + TileDim, ty};
+//    quad.tr.vect = (Vec2) {tx + TileDim, ty + TileDim};
+//    quad.tl.vect = (Vec2) {tx, ty + TileDim};
+//    quad.tl.color = quad.tr.color = quad.bl.color = quad.br.color
+//            = (Color4B) {1, 1, 1, 1};
+//    quad.tl.texCoords = (Vec2) {0, 0};
+//    quad.tr.texCoords = (Vec2) {1, 0};
+//    quad.br.texCoords = (Vec2) {1, 1};
+//    quad.bl.texCoords = (Vec2) {0, 1};
+//
+//    // "Explain" the quad structure to OpenGL ES
+//
+//#define kQuadSize sizeof(quad.bl)
+//    long offset = (long) &quad;
+//
+//    // vertex
+//    int diff = offsetof(QuadVertex, vect);
+//    glVertexPointer(2, GL_FLOAT, kQuadSize, (void *) (offset + diff));
+//
+//    // color
+//    diff = offsetof(QuadVertex, color);
+//    glColorPointer(4, GL_UNSIGNED_BYTE, kQuadSize, (void *) (offset + diff));
+//
+//    // texCoods
+//    diff = offsetof(QuadVertex, texCoords);
+//    glTexCoordPointer(2, GL_FLOAT, kQuadSize, (void *) (offset + diff));
+//
+//    glBindTexture(GL_TEXTURE_2D, texture);
+//
+//    // Draw the quad
+//    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+//
+//    glBindTexture(GL_TEXTURE_2D, 0);
 
-    GLuint texture = textures.at(index);
-    if (texture == 0)
-        texture = substitute;
-    if (texture == 0)
-        return;
 
-    float tx = x * TileDim;
-    float ty = y * TileDim;
+    glEnableClientState(GL_VERTEX_ARRAY);
 
-    Quad quad;
-    quad.bl.vect = (Vec2) {tx, ty};
-    quad.br.vect = (Vec2) {tx + TileDim, ty};
-    quad.tr.vect = (Vec2) {tx + TileDim, ty + TileDim};
-    quad.tl.vect = (Vec2) {tx, ty + TileDim};
-    quad.tl.color = quad.tr.color = quad.bl.color = quad.br.color
-            = (Color4B) {0, 0, 0, 255};
-    quad.tl.texCoords = (Vec2) {0, 0};
-    quad.tr.texCoords = (Vec2) {1, 0};
-    quad.br.texCoords = (Vec2) {1, 1};
-    quad.bl.texCoords = (Vec2) {0, 1};
 
-    // "Explain" the quad structure to OpenGL ES
-
-    #define kQuadSize sizeof(quad.bl)
-    long offset = (long) &quad;
-
-    // vertex
-    int diff = offsetof(QuadVertex, vect);
-    glVertexPointer(2, GL_FLOAT, kQuadSize, (void *) (offset + diff));
-
-    // color
-    diff = offsetof(QuadVertex, color);
-    glColorPointer(4, GL_UNSIGNED_BYTE, kQuadSize, (void *) (offset + diff));
-
-    // texCoods
-    diff = offsetof(QuadVertex, texCoords);
-    glTexCoordPointer(2, GL_FLOAT, kQuadSize, (void *) (offset + diff));
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // Draw the quad
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+    float vertices[] = {
+            -0.5f, -0.29f, -10.0f,
+            0.5f, -0.29f, -10.0f,
+            0.0f, 0.58f, -10.0f
+    };
+    GLbyte indices[] = { 0, 1, 2 };
+    glVertexPointer(3, GL_FLOAT, 0, vertices);
+    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_BYTE, indices);
 }
 
 void TextureBuffer::setViewModelMatrix(const QPointF &viewOffset, double viewZoomFactor) const {

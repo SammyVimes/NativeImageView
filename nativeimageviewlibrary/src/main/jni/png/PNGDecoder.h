@@ -42,6 +42,10 @@ typedef struct {
 #define LOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "NDK",__VA_ARGS__)
 
 
+#define LOG_TAG "PNGDecoder"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
+
 
 static void read_png_data_callback(
         png_structp png_ptr, png_byte* raw_data, png_size_t read_length) {
@@ -120,10 +124,12 @@ static GLenum get_gl_color_format(const int png_color_format) {
     assert(png_color_format == PNG_COLOR_TYPE_GRAY
            || png_color_format == PNG_COLOR_TYPE_RGB_ALPHA
            || png_color_format == PNG_COLOR_TYPE_GRAY_ALPHA);
-
+    LOGI("Png color format %d", png_color_format);
     switch (png_color_format) {
         case PNG_COLOR_TYPE_GRAY:
             return GL_LUMINANCE;
+        case PNG_COLOR_TYPE_RGB:
+            return GL_RGB;
         case PNG_COLOR_TYPE_RGB_ALPHA:
             return GL_RGBA;
         case PNG_COLOR_TYPE_GRAY_ALPHA:
