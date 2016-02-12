@@ -17,6 +17,7 @@ model {
         moduleName = "nativeimageviewlib"
         CFlags.add("-DGL_GLEXT_PROTOTYPES")
         cppFlags.add("-DGL_GLEXT_PROTOTYPES")
+        cppFlags.add("-std=c++11")
         ldLibs.add("z")
         ldLibs.add("log")
         ldLibs.add("android")
