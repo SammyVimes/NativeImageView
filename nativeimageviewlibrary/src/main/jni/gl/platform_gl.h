@@ -5,6 +5,6 @@
 #ifndef NATIVEIMAGEVIEW_PLATFORM_GL_H
 #define NATIVEIMAGEVIEW_PLATFORM_GL_H
 
-#include <GLES/gl.h>
+#include <GLES2/gl2.h>
 
 #endif //NATIVEIMAGEVIEW_PLATFORM_GL_H
