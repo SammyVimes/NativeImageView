@@ -124,6 +124,8 @@ static GLenum get_gl_color_format(const int png_color_format) {
     switch (png_color_format) {
         case PNG_COLOR_TYPE_GRAY:
             return GL_LUMINANCE;
+        case PNG_COLOR_TYPE_RGB:
+            return GL_RGB;
         case PNG_COLOR_TYPE_RGB_ALPHA:
             return GL_RGBA;
         case PNG_COLOR_TYPE_GRAY_ALPHA:
