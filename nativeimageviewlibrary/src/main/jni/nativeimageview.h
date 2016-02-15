@@ -118,7 +118,6 @@ GLuint build_program_from_assets(
 }
 
 
-static GLuint texture;
 static GLuint buffer;
 static GLuint program;
 
@@ -444,7 +443,6 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
     _height = h;
     glViewport(0, 0, w, h);
 
-    texture = load_png_file_into_texture("/storage/sdcard1/Pictures/image.png");
     buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
     program = build_program_from_assets("shaders/shader.vsh", "shaders/shader.fsh");
 

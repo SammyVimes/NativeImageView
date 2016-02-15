@@ -80,29 +80,49 @@ void TextureBuffer::draw(int x, int y, GLuint substitute, GLint u_texture_unit_l
         return;
 
     GLuint texture = textures.at(index);
+    //FIXME: tex handle is 0!!
+    LOGI("Tex handle is %d", texture);
     if (texture == 0)
         texture = substitute;
     if (texture == 0)
         return;
+    LOGI("Final tex handle is %d", texture);
 
     float tx = x * TileDim;
     float ty = y * TileDim;
 
-    float mvp[16] = {
-            1, 0, 0, tx,
-            0, 1, 0, ty,
-            0, 0, 1, 0,
-            0, 0, 0, 1
+
+    float left = 0;
+    float right = viewWidth;
+    float bottom = 0;
+    float top = viewHeight;
+    float near = -1;
+    float far = -1;
+    float a = 2.0f / (right - left);
+    float b = 2.0f / (top - bottom);
+    float c = -2.0f / (far - near);
+
+    float ox = - (right + left)/(right - left);
+    float oy = - (top + bottom)/(top - bottom);
+    float oz = - (far + near)/(far - near);
+
+
+    float ortho[16] = {
+            a, 0, 0, 0,
+            0, b, 0, 0,
+            0, 0, c, 0,
+            ox, oy, oz, 1
     };
 
-    matrixTranslateM(mvp, viewOffset.x(), viewOffset.y(), 0);
-    matrixScaleM(mvp, TileDim / viewWidth, TileDim / viewHeight, 1);
-    matrixScaleM(mvp, viewZoomFactor / zoomFactor, viewZoomFactor / zoomFactor, 1);
+    matrixTranslateM(ortho, viewOffset.x(), viewOffset.y(), 0);
+    matrixTranslateM(ortho, tx, ty, 0);
+    matrixScaleM(ortho, TileDim / viewWidth, TileDim / viewHeight, 1);
+    matrixScaleM(ortho, viewZoomFactor / zoomFactor, viewZoomFactor / zoomFactor, 1);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(u_texture_unit_location, 0);
-    glUniformMatrix4fv(mvp_matrix_location, 1, 0, &mvp[0]);
+    glUniformMatrix4fv(mvp_matrix_location, 1, 0, &ortho[0]);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
