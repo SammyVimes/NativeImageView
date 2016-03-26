@@ -232,10 +232,13 @@ void refreshBackingStore()
     }
 }
 
+bool pendingUpdate = false;
 
 void updateBackingStore()
 {
     LOGI("updateBackingStore");
+    pendingUpdate = false;
+
     // During zooming in and out, do not bother.
     if (m_mainBuffer.zoomFactor != m_viewZoomFactor)
         return;
@@ -276,11 +279,10 @@ void updateBackingStore()
 
 
         GLuint content = load_png_file_into_texture("/storage/sdcard1/Pictures/tile.png");
-        LOGI("NEW TEXTURE LOADED! %d", content);
+        LOGI("NEW TEXTURE LOADED! %d updateX %d updateY %d", content, updateX, updateY);
         m_mainBuffer.replace(updateX, updateY, content);
 //        update();
     }
-
 
     if (updateTask) {
         updateTask->cancel();
@@ -288,14 +290,17 @@ void updateBackingStore()
     }
 }
 
-
 void scheduleUpdate()
 {
+    if (pendingUpdate) {
+        return;
+    }
+    pendingUpdate = true;
     if (updateTask) {
         updateTask->cancel();
         updateTask = 0;
     }
-    updateTask = new TimerTask(UpdateDelay, true, &updateBackingStore);
+    updateTask = new TimerTask(UpdateDelay, false, &updateBackingStore);
 }
 
 void scheduleRefresh()
@@ -421,6 +426,7 @@ void JNICALL Java_com_github_sammyvimes_nativeimageviewlibrary_NativeImageView_n
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     if (needsUpdate) {
+        LOGI("NEEDS UPDATE");
         scheduleUpdate();
     } else {
         // Every tile is up-to-date, thus discard the background.
